@@ -15,10 +15,10 @@ export const validateRequest =
   (schema: ZodType) =>
   async (req: Request, _res: Response, next: NextFunction): Promise<void> => {
     const result = await schema.safeParseAsync({
-      body: req.body,
+      body: req.body as unknown,
       query: req.query,
       params: req.params,
-      cookies: req.cookies,
+      cookies: req.cookies as unknown,
     });
 
     if (!result.success) {

@@ -94,7 +94,9 @@ export const globalErrorHandler: ErrorRequestHandler = (
 
   const { statusCode, message, details } = normalise(error);
 
-  if (statusCode >= StatusCodes.INTERNAL_SERVER_ERROR) {
+  // Only genuine server faults are logged — a 401 or a validation 400 is the
+  // system working, and logging those would bury the errors that matter.
+  if (statusCode >= 500) {
     console.error(error);
   }
 

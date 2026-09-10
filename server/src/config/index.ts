@@ -1,5 +1,6 @@
 import 'dotenv/config';
 import { z } from 'zod';
+import { DURATION_PATTERN } from '../app/utils/duration.js';
 
 /**
  * Environment contract. The process refuses to boot on an invalid environment —
@@ -15,8 +16,10 @@ const envSchema = z.object({
   JWT_ACCESS_SECRET: z
     .string()
     .min(32, 'JWT_ACCESS_SECRET must be at least 32 characters'),
-  ACCESS_TOKEN_TTL: z.string().default('15m'),
-  REFRESH_TOKEN_TTL: z.string().default('7d'),
+  // Validated here so a typo like "15min" fails at boot rather than producing a
+  // token with a silently wrong lifetime.
+  ACCESS_TOKEN_TTL: z.string().regex(DURATION_PATTERN).default('15m'),
+  REFRESH_TOKEN_TTL: z.string().regex(DURATION_PATTERN).default('7d'),
   BCRYPT_ROUNDS: z.coerce.number().int().min(10).max(15).default(12),
 
   TIMEZONE: z.string().default('Europe/London'),

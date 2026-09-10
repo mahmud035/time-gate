@@ -1,6 +1,12 @@
 import type { Request, Response } from 'express';
 import { StatusCodes } from 'http-status-codes';
-import { COOKIE, MAX_AGE, cookieOptions } from '../../utils/cookies.js';
+import {
+  COOKIE,
+  MAX_AGE,
+  cookieNames,
+  cookieOptions,
+  readCookie,
+} from '../../utils/cookies.js';
 import { sendResponse } from '../../utils/sendResponse.js';
 
 /**
@@ -60,8 +66,8 @@ const setProbeCookie = (req: Request, res: Response): void => {
  * Vercel proxy on a real iPhone, cookie auth is viable and the plan stands.
  */
 const readProbeCookie = (req: Request, res: Response): void => {
-  const value: unknown = req.cookies?.[COOKIE.probe];
-  const received = typeof value === 'string' && value.length > 0;
+  const value = readCookie(req, COOKIE.probe);
+  const received = value !== undefined;
 
   sendResponse(res, {
     statusCode: StatusCodes.OK,
@@ -70,10 +76,8 @@ const readProbeCookie = (req: Request, res: Response): void => {
       : 'Probe cookie did NOT come back.',
     data: {
       received,
-      issuedAt: received ? value : null,
-      cookieNamesReceived: Object.keys(
-        (req.cookies ?? {}) as Record<string, unknown>,
-      ),
+      issuedAt: value ?? null,
+      cookieNamesReceived: cookieNames(req),
       request: proxyDiagnostics(req),
     },
   });

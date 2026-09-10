@@ -1,3 +1,5 @@
+import type { AccessTokenPayload } from '../app/modules/auth/auth.interface.ts';
+
 /**
  * Express 5 makes `req.query` a read-only getter, so `validateRequest` cannot
  * write parsed values back onto the request the Express 4 way. Validated output
@@ -12,6 +14,9 @@ declare global {
         params?: unknown;
         cookies?: unknown;
       };
+
+      /** Set by `requireAuth`. Absent on public routes. */
+      auth?: AccessTokenPayload;
     }
   }
 }

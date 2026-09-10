@@ -1,4 +1,4 @@
-import type { CookieOptions, Response } from 'express';
+import type { CookieOptions, Request, Response } from 'express';
 import { isProduction } from '../../config/index.js';
 
 /**
@@ -36,6 +36,24 @@ const baseOptions: CookieOptions = {
   path: '/api',
 };
 
+/**
+ * Reads a cookie as a definite string, or undefined.
+ *
+ * `cookie-parser` types the jar as `any`, so every direct read would be an
+ * unchecked access. Doing it once here means the rest of the codebase handles
+ * `string | undefined` and an empty cookie is treated as absent, not as "".
+ */
+export const readCookie = (req: Request, name: string): string | undefined => {
+  const jar = req.cookies as Record<string, unknown> | undefined;
+  const value = jar?.[name];
+
+  return typeof value === 'string' && value.length > 0 ? value : undefined;
+};
+
+/** Every cookie name the browser sent, for diagnostics only. */
+export const cookieNames = (req: Request): string[] =>
+  Object.keys((req.cookies ?? {}) as Record<string, unknown>);
+
 /** Cookie options for a given lifetime, in milliseconds. */
 export const cookieOptions = (maxAgeMs: number): CookieOptions => ({
   ...baseOptions,
@@ -48,4 +66,29 @@ export const cookieOptions = (maxAgeMs: number): CookieOptions => ({
  */
 export const clearAuthCookie = (res: Response, name: string): void => {
   res.clearCookie(name, baseOptions);
+};
+
+/**
+ * The single place auth cookies are issued.
+ *
+ * The refresh cookie's lifetime is pinned to the session row's own expiry rather
+ * than recomputed, so the browser and the database can never disagree about when
+ * a session ends.
+ */
+export const setAuthCookies = (
+  res: Response,
+  tokens: { accessToken: string; refreshToken: string; refreshExpiresAt: Date },
+): void => {
+  res.cookie(COOKIE.access, tokens.accessToken, cookieOptions(MAX_AGE.access));
+  res.cookie(
+    COOKIE.refresh,
+    tokens.refreshToken,
+    cookieOptions(Math.max(0, tokens.refreshExpiresAt.getTime() - Date.now())),
+  );
+};
+
+/** Signing out clears both, whether or not the server knew the session. */
+export const clearAuthCookies = (res: Response): void => {
+  clearAuthCookie(res, COOKIE.access);
+  clearAuthCookie(res, COOKIE.refresh);
 };
