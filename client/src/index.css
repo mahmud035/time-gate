@@ -1,0 +1,35 @@
+@import 'tailwindcss';
+
+/**
+ * Semantic tokens only — components never reference a raw colour.
+ * Trustworthy over flashy: this is a payroll tool, not a landing page.
+ */
+@theme {
+  --color-surface: oklch(99% 0.002 250);
+  --color-surface-raised: oklch(100% 0 0);
+  --color-surface-sunken: oklch(96.5% 0.004 250);
+
+  --color-border: oklch(90% 0.006 250);
+  --color-border-strong: oklch(80% 0.01 250);
+
+  --color-content: oklch(25% 0.02 250);
+  --color-content-muted: oklch(52% 0.015 250);
+
+  --color-brand: oklch(52% 0.15 250);
+  --color-brand-contrast: oklch(99% 0 0);
+
+  --color-success: oklch(58% 0.14 155);
+  --color-warning: oklch(70% 0.15 75);
+  --color-danger: oklch(56% 0.19 25);
+}
+
+@layer base {
+  body {
+    @apply bg-surface text-content antialiased;
+    font-family:
+      system-ui,
+      -apple-system,
+      'Segoe UI',
+      sans-serif;
+  }
+}
