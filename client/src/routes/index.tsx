@@ -1,12 +1,11 @@
 import { createBrowserRouter, Navigate } from 'react-router';
 import DashboardPage from '@/pages/DashboardPage.tsx';
 import LoginPage from '@/pages/LoginPage.tsx';
-import ProbePage from '@/pages/ProbePage.tsx';
 import { ProtectedRoute } from './ProtectedRoute.tsx';
 
 /**
- * Batch 1 routes only. The kiosk, phone linking, timesheets and reports arrive
- * in their own batches.
+ * Batch 1 routes only. The punch screen arrives in Batch 3, the manager
+ * dashboard in Batch 4.
  */
 export const router = createBrowserRouter([
   { path: '/login', element: <LoginPage /> },
@@ -18,6 +17,5 @@ export const router = createBrowserRouter([
       </ProtectedRoute>
     ),
   },
-  { path: '/probe', element: <ProbePage /> },
   { path: '*', element: <Navigate to="/login" replace /> },
 ]);

@@ -8,24 +8,17 @@ const punchSchema = new Schema<IPunch>(
     at: { type: Date, required: true },
 
     source: { type: String, enum: PUNCH_SOURCES, required: true },
-    deviceSessionId: {
-      type: Schema.Types.ObjectId,
-      ref: 'Session',
-      default: null,
-    },
 
     idempotencyKey: { type: String, index: { unique: true, sparse: true } },
 
     createdBy: { type: Schema.Types.ObjectId, ref: 'User', required: true },
 
     voidedAt: { type: Date, default: null },
-    voidedBy: { type: Schema.Types.ObjectId, ref: 'User', default: null },
-    voidReason: { type: String, default: null },
   },
   { timestamps: true },
 );
 
-/** Shift assembly: every punch for a person over a date range, in order. */
+/** Shift pairing: every punch for a person over a date range, in order. */
 punchSchema.index({ userId: 1, at: 1 });
 
 /**

@@ -1,16 +1,17 @@
 import type { Types } from 'mongoose';
 import type { UserRole } from '../user/user.interface.js';
 
-export const SESSION_KINDS = ['refresh', 'kiosk', 'phone'] as const;
+export const SESSION_KINDS = ['refresh'] as const;
 export type SessionKind = (typeof SESSION_KINDS)[number];
 
 /**
- * Every long-lived credential this system issues, in one collection with one
- * revoke path: a manager's refresh token, a kiosk tablet, and an employee's
- * linked phone.
+ * A manager's refresh credential.
  *
- * Keeping them together is what makes offboarding a single operation —
- * deactivating a leaver revokes their sessions of every kind at once.
+ * Staff hold no session of any kind — a 4-digit code both identifies and
+ * authenticates them on every punch, so there is nothing to enrol and nothing
+ * to revoke. The `kind` discriminator is kept because it costs nothing and
+ * makes adding a second credential type a schema change rather than a
+ * migration.
  */
 export type ISession = {
   _id: Types.ObjectId;
@@ -19,37 +20,18 @@ export type ISession = {
   tokenHash: string;
   kind: SessionKind;
 
-  /** Null for a kiosk — a tablet belongs to the site, not to a person. */
   userId: Types.ObjectId | null;
 
-  /** Human label for the manager's device list, e.g. "Front entrance tablet". */
+  /** Human label for the manager's device list, e.g. "Manager — iOS". */
   label: string;
 
   lastUsedAt: Date | null;
-  /** Null for kiosk and phone sessions, which expire only by revocation. */
   expiresAt: Date | null;
   revokedAt: Date | null;
 
   createdBy: Types.ObjectId;
   createdAt: Date;
   updatedAt: Date;
-};
-
-/**
- * One-time code a manager issues to link an employee's phone.
- *
- * Typed by the employee rather than opened from a link, because iOS home-screen
- * web apps keep cookies and storage separate from Safari — a link tapped in
- * Safari would enrol the wrong container.
- */
-export type ILinkCode = {
-  _id: Types.ObjectId;
-  codeHash: string;
-  userId: Types.ObjectId;
-  expiresAt: Date;
-  usedAt: Date | null;
-  createdBy: Types.ObjectId;
-  createdAt: Date;
 };
 
 /** What the access token carries, and what request handlers read off it. */

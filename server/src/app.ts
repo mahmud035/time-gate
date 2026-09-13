@@ -2,6 +2,8 @@ import cookieParser from 'cookie-parser';
 import express from 'express';
 import { StatusCodes } from 'http-status-codes';
 import mongoose from 'mongoose';
+import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { globalErrorHandler } from './app/middlewares/globalErrorHandler.js';
 import { noStore } from './app/middlewares/noStore.js';
 import { notFound } from './app/middlewares/notFound.js';
@@ -11,10 +13,10 @@ import { sendResponse } from './app/utils/sendResponse.js';
 const app = express();
 
 /**
- * Two proxies sit in front of this server (Vercel, then Railway). This is set
- * so `req.protocol` and `req.ip` are meaningful **in logs only** — nothing
- * security-relevant is ever keyed on the client IP, because a forwarded header
- * is attacker-controlled. Lockouts are account-keyed (plan §3).
+ * Railway's router sits in front of this server. This is set so `req.protocol`
+ * and `req.ip` are meaningful for logs and for rate limiting — never for
+ * **authorisation**, because a forwarded header is attacker-controlled.
+ * Account lockouts are keyed on the account, not the IP.
  */
 app.set('trust proxy', true);
 app.disable('x-powered-by');
@@ -39,7 +41,36 @@ app.get('/api/health', (_req, res) => {
 
 app.use('/api', apiRoutes);
 
+/**
+ * API 404s must stay JSON. Registering this before the static block is what
+ * stops an unknown `/api/*` path falling through and being answered with
+ * `index.html`.
+ */
 app.use('/api', notFound);
+
+/**
+ * One origin serves the API and the built client, which is what makes the auth
+ * cookies first-party without a proxy.
+ *
+ * `index: false` keeps `express.static` from answering `/` directly, so every
+ * navigation reaches the SPA fallback below.
+ *
+ * The fallback is `/{*splat}`. Express 5 ships path-to-regexp 8, where a bare
+ * `'*'` throws `Missing parameter name at index 1`, so the wildcard must be
+ * named — and a bare `/*splat` matches every path **except** `/`, which would
+ * leave the root serving Express's default 404 page. The braces make the
+ * segment optional so `/` matches too. Verified against both patterns.
+ */
+const CLIENT_DIST = join(
+  fileURLToPath(new URL('.', import.meta.url)),
+  '../../client/dist',
+);
+
+app.use(express.static(CLIENT_DIST, { index: false }));
+app.get('/{*splat}', (_req, res) => {
+  res.sendFile(join(CLIENT_DIST, 'index.html'));
+});
+
 app.use(globalErrorHandler);
 
 export default app;

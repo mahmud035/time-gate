@@ -4,10 +4,10 @@ import { config } from '../../config/index.js';
 import type { AccessTokenPayload } from '../modules/auth/auth.interface.js';
 
 /**
- * Opaque credential for refresh, kiosk and phone sessions.
+ * Opaque credential for a manager's refresh session.
  *
- * Not a JWT: these must be revocable the instant a manager unlinks a phone or
- * deactivates a leaver, and a self-contained token cannot be withdrawn.
+ * Not a JWT: it must be revocable the instant a manager signs out or is
+ * deactivated, and a self-contained token cannot be withdrawn.
  */
 export const createOpaqueToken = (): string =>
   randomBytes(32).toString('base64url');

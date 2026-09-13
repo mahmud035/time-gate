@@ -68,7 +68,7 @@ const issueSession = async (
  * Signs a manager in with email and password.
  *
  * Employees have no password and never reach this path — they identify
- * themselves with a PIN on a device that already holds a kiosk or phone session.
+ * themselves with a 4-digit code on the shared punch page.
  */
 const login = async (
   email: string,

@@ -18,7 +18,7 @@ const sessionSchema = new Schema<ISession>(
   { timestamps: true },
 );
 
-/** The manager's linked-device list, and bulk revocation when someone leaves. */
+/** The manager's own session list, and bulk revocation when someone leaves. */
 sessionSchema.index({ userId: 1, kind: 1, revokedAt: 1 });
 
 /**

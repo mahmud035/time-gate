@@ -4,25 +4,23 @@ import { isProduction } from '../../config/index.js';
 /**
  * Every cookie this API issues passes through here.
  *
- * Same-origin is what makes these first-party: the browser only ever talks to
- * the frontend origin, and `/api/*` is proxied to this server. Host-only (no
- * `Domain`), `SameSite=Strict`, `Path=/api`.
+ * These are first-party by construction: this server serves both the client and
+ * `/api/*` from one origin, so there is no proxy hop and no cross-site step to
+ * survive. Host-only (no `Domain`), `SameSite=Strict`, `Path=/api`.
  *
- * If hosting ever changes (plan §9), this file is the only place that needs to.
+ * Only managers hold cookies. Staff authenticate with a 4-digit code on every
+ * punch and hold no session at all.
+ *
+ * If hosting ever changes, this file is the only place that needs to.
  */
 export const COOKIE = {
   access: 'tg_at',
   refresh: 'tg_rt',
-  device: 'tg_dev',
-  /** Temporary — Batch 1 proxy diagnostic only. Removed once the gate is green. */
-  probe: 'tg_probe',
 } as const;
 
 export const MAX_AGE = {
   access: 15 * 60 * 1000, // 15 minutes
   refresh: 7 * 24 * 60 * 60 * 1000, // 7 days
-  /** Browsers cap cookie lifetime at 400 days, so this is the practical maximum. */
-  device: 400 * 24 * 60 * 60 * 1000,
 } as const;
 
 /**
@@ -49,10 +47,6 @@ export const readCookie = (req: Request, name: string): string | undefined => {
 
   return typeof value === 'string' && value.length > 0 ? value : undefined;
 };
-
-/** Every cookie name the browser sent, for diagnostics only. */
-export const cookieNames = (req: Request): string[] =>
-  Object.keys((req.cookies ?? {}) as Record<string, unknown>);
 
 /** Cookie options for a given lifetime, in milliseconds. */
 export const cookieOptions = (maxAgeMs: number): CookieOptions => ({

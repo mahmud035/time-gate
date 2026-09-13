@@ -9,7 +9,7 @@ const LoginPage = () => {
       <header className="mb-8">
         <h1 className="text-2xl font-semibold">TimeGate</h1>
         <p className="mt-1 text-sm text-content-muted">
-          Manager sign-in. Staff clock in at the kiosk, not here.
+          Manager sign-in. Staff clock in with their code, not here.
         </p>
       </header>
 

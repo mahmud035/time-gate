@@ -33,7 +33,6 @@ const userSchema = new Schema<IUser>(
 
     role: { type: String, enum: USER_ROLES, required: true },
     isActive: { type: Boolean, default: true },
-    phonePunchEnabled: { type: Boolean, default: false },
 
     failedPinAttempts: { type: Number, default: 0 },
     pinLockedUntil: { type: Date, default: null },

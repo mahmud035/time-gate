@@ -7,9 +7,8 @@ export type UserRole = (typeof USER_ROLES)[number];
  * One record per person, employee or manager.
  *
  * Only managers have an email and a password — employees never log in. An
- * employee identifies themselves with a PIN on a device that already holds a
- * kiosk or phone session, so there is no employee credential to phish or share
- * beyond the PIN itself.
+ * employee's 4-digit code both identifies and authenticates them on the shared
+ * punch page, so the code is the whole of their credential.
  */
 export type IUser = {
   _id: Types.ObjectId;
@@ -36,7 +35,6 @@ export type IUser = {
 
   role: UserRole;
   isActive: boolean;
-  phonePunchEnabled: boolean;
 
   failedPinAttempts: number;
   pinLockedUntil: Date | null;

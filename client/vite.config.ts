@@ -4,8 +4,9 @@ import { fileURLToPath, URL } from 'node:url';
 import { defineConfig } from 'vite';
 
 /**
- * Production is same-origin: Vercel rewrites `/api/*` to the Railway API, so the
- * browser only ever talks to one origin and cookies stay first-party.
+ * Production is same-origin: one Express server serves the built client and
+ * `/api/*`, so the browser only ever talks to one origin and cookies stay
+ * first-party.
  *
  * This dev proxy mirrors that exactly, so a cookie that works locally works in
  * production for the same reasons. Never point the client at the API's own

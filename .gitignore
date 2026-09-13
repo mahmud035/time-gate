@@ -1,10 +1,14 @@
 node_modules/
 dist/
 build/
+# Every env file holds real secrets and stays local. The template is the one
+# exception. Listed here rather than relying on a global gitignore, so the
+# protection travels with the repo.
 .env
-.env.local
+.env.*
+!.env.example
+
 *.local
 .DS_Store
 coverage/
-.vercel
 *.log

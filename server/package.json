@@ -8,7 +8,8 @@
   },
   "scripts": {
     "dev": "tsx watch src/server.ts",
-    "build": "tsc",
+    "build": "rm -rf dist && tsc",
+    "typecheck": "tsc --noEmit",
     "start": "node dist/server.js",
     "seed:manager": "node dist/scripts/seedManager.js",
     "seed:manager:dev": "tsx src/scripts/seedManager.ts",

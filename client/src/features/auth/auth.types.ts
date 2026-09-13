@@ -6,7 +6,6 @@ export type PublicUser = {
   payrollRef: string | null;
   role: 'employee' | 'manager';
   isActive: boolean;
-  phonePunchEnabled: boolean;
 };
 
 export type LoginCredentials = {

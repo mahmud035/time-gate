@@ -1,11 +1,11 @@
 import type { RequestHandler } from 'express';
 
 /**
- * Belt and braces alongside `x-vercel-enable-rewrite-caching: 0` in vercel.json.
+ * A cached punch or timesheet response would be a correctness bug — someone's
+ * hours read back stale — so the API declares itself uncacheable at the source
+ * rather than relying on any layer above it to get this right.
  *
- * Vercel projects created on or after 6 April 2026 honour upstream cache headers
- * on external rewrites by default. A cached timesheet or punch response would be
- * a correctness bug, so this API declares itself uncacheable at the source too.
+ * Scoped to `/api` so the hashed client assets keep their own caching.
  */
 export const noStore: RequestHandler = (_req, res, next) => {
   res.setHeader('Cache-Control', 'no-store');

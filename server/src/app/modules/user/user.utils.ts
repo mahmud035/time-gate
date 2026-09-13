@@ -11,7 +11,6 @@ export type PublicUser = {
   payrollRef: string | null;
   role: UserRole;
   isActive: boolean;
-  phonePunchEnabled: boolean;
 };
 
 /** Maps a stored user onto the public shape the frontend types mirror. */
@@ -22,5 +21,4 @@ export const toPublicUser = (user: IUser): PublicUser => ({
   payrollRef: user.payrollRef ?? null,
   role: user.role,
   isActive: user.isActive,
-  phonePunchEnabled: user.phonePunchEnabled,
 });
