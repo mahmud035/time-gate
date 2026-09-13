@@ -11,6 +11,28 @@ export type PunchType = (typeof PUNCH_TYPES)[number];
 export const PUNCH_SOURCES = ['staff', 'manager'] as const;
 export type PunchSource = (typeof PUNCH_SOURCES)[number];
 
+/** What a person can be doing right now, derived from their punch history. */
+export const PUNCH_STATES = ['clocked-out', 'clocked-in', 'on-break'] as const;
+export type PunchState = (typeof PUNCH_STATES)[number];
+
+/**
+ * What a person can ask to do. Every punch type, plus one compound action.
+ *
+ * `break-end-and-clock-out` exists because staff hold no session: each action
+ * costs a fresh code entry, so ending a break and leaving would otherwise mean
+ * typing the code twice. It writes two real punches at the same instant — the
+ * break genuinely did end when they left — which is also what keeps the shift
+ * out of the manager's review queue.
+ */
+export const PUNCH_ACTIONS = [
+  'clock-in',
+  'break-start',
+  'break-end',
+  'clock-out',
+  'break-end-and-clock-out',
+] as const;
+export type PunchAction = (typeof PUNCH_ACTIONS)[number];
+
 /**
  * A single clock event. Punches are the only stored fact — shifts and hours are
  * derived from them at read time, so there is never a second source of truth to
