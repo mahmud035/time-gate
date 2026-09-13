@@ -56,6 +56,15 @@ const envSchema = z.object({
    * endpoint being enumerated from the open internet.
    */
   PUNCH_SLUG: z.string().min(16, 'PUNCH_SLUG must be at least 16 characters'),
+
+  /**
+   * Keys the code lookup index. Kept separate from JWT_ACCESS_SECRET on
+   * purpose: rotating the token secret should sign everyone out, not stop
+   * every staff member from clocking in.
+   */
+  PUNCH_CODE_PEPPER: z
+    .string()
+    .min(32, 'PUNCH_CODE_PEPPER must be at least 32 characters'),
 });
 
 const parsed = envSchema.safeParse(process.env);

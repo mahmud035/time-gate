@@ -4,6 +4,7 @@ import {
   deriveState,
   nextActions,
   punchesForAction,
+  validateSequence,
   type PunchEvent,
 } from './punch.logic.js';
 import type { PunchAction, PunchState } from './punch.interface.js';
@@ -183,5 +184,80 @@ describe('punchesForAction', () => {
       'break-end',
       'clock-out',
     ]);
+  });
+});
+
+// Gate: a manager edit producing an impossible sequence is rejected.
+describe('validateSequence', () => {
+  const seq = (...events: PunchEvent[]) => () =>
+    validateSequence(events, LIMIT_HOURS);
+
+  it('accepts an ordinary day with a break', () => {
+    expect(
+      seq(
+        punch('clock-in', '2026-06-10T09:00:00Z'),
+        punch('break-start', '2026-06-10T11:00:00Z'),
+        punch('break-end', '2026-06-10T11:15:00Z'),
+        punch('clock-out', '2026-06-10T17:00:00Z'),
+      ),
+    ).not.toThrow();
+  });
+
+  it('rejects a break-end with no break to end', () => {
+    expect(
+      seq(
+        punch('clock-in', '2026-06-10T09:00:00Z'),
+        punch('break-end', '2026-06-10T11:15:00Z'),
+      ),
+    ).toThrow(/impossible sequence/);
+  });
+
+  it('rejects a clock-out before any clock-in', () => {
+    expect(seq(punch('clock-out', '2026-06-10T17:00:00Z'))).toThrow(
+      /impossible sequence/,
+    );
+  });
+
+  it('rejects a second clock-in inside a shift that is still fresh', () => {
+    expect(
+      seq(
+        punch('clock-in', '2026-06-10T09:00:00Z'),
+        punch('clock-in', '2026-06-10T10:00:00Z'),
+      ),
+    ).toThrow(/impossible sequence/);
+  });
+
+  it('refuses with 409, not a 500', () => {
+    try {
+      validateSequence([punch('break-start', '2026-06-10T09:00:00Z')], LIMIT_HOURS);
+      throw new Error('expected a refusal');
+    } catch (error) {
+      expect((error as AppError).statusCode).toBe(409);
+    }
+  });
+
+  /**
+   * Someone forgot to clock out and simply started again the next morning.
+   * That is an everyday occurrence, so the history it leaves must stay valid —
+   * otherwise the manager could not correct anything else about that week.
+   */
+  it('accepts a fresh clock-in on top of a shift left open overnight', () => {
+    expect(
+      seq(
+        punch('clock-in', '2026-06-09T09:00:00Z'),
+        punch('clock-in', '2026-06-10T09:00:00Z'),
+        punch('clock-out', '2026-06-10T17:00:00Z'),
+      ),
+    ).not.toThrow();
+  });
+
+  it('ignores voided punches when judging the sequence', () => {
+    expect(
+      seq(
+        punch('clock-in', '2026-06-10T09:00:00Z'),
+        { ...punch('clock-in', '2026-06-10T10:00:00Z'), voidedAt: new Date() },
+        punch('clock-out', '2026-06-10T17:00:00Z'),
+      ),
+    ).not.toThrow();
   });
 });

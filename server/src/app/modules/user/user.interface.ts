@@ -20,12 +20,29 @@ export type IUser = {
   passwordHash?: string;
 
   /**
-   * 4-digit PIN, bcrypt hashed. Never selected by default.
+   * Keyed hash of the 4-digit code. Both identifies and authenticates a punch.
    *
-   * Required for employees, who punch with it. Optional for a manager who only
-   * runs the dashboard and never clocks in — the model enforces exactly that.
+   * Deliberately an HMAC and not bcrypt, for two reasons that point the same
+   * way.
+   *
+   * Speed: the code has to say *who* this is, and a bcrypt hash cannot be
+   * looked up — finding the owner would mean comparing against every employee
+   * in turn at roughly a third of a second each, which is ten seconds a punch
+   * in a thirty-person workplace. This is one indexed read.
+   *
+   * Secrecy: four digits is only ten thousand possibilities, so a stolen
+   * database of bcrypt hashes gives up every code to about an hour of offline
+   * guessing. Storing one would be handing over the codes with extra steps.
+   * The pepper keying this HMAC lives in the environment, not the database, so
+   * a database dump alone cannot even compute a candidate.
+   *
+   * What actually stops online guessing is the slug gating the punch page and
+   * the failure-only throttle in front of it — never the cost of a hash.
+   *
+   * Required for employees, who punch with it. Absent for a manager who only
+   * runs the dashboard, so the unique index is sparse.
    */
-  pinHash?: string;
+  codeLookup?: string;
 
   /**
    * "Payroll / works number" — the join key payroll software imports against.
@@ -36,8 +53,11 @@ export type IUser = {
   role: UserRole;
   isActive: boolean;
 
-  failedPinAttempts: number;
-  pinLockedUntil: Date | null;
+  /**
+   * Managers only. There is deliberately no code equivalent: a wrong code
+   * matches no row at all, so there is no account to attribute the failure to
+   * and nothing a per-account counter could lock.
+   */
   failedPasswordAttempts: number;
   passwordLockedUntil: Date | null;
 

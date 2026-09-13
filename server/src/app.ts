@@ -13,12 +13,17 @@ import { sendResponse } from './app/utils/sendResponse.js';
 const app = express();
 
 /**
- * Railway's router sits in front of this server. This is set so `req.protocol`
- * and `req.ip` are meaningful for logs and for rate limiting — never for
- * **authorisation**, because a forwarded header is attacker-controlled.
- * Account lockouts are keyed on the account, not the IP.
+ * Exactly one proxy sits in front of this server: Railway's router.
+ *
+ * The hop count matters. `true` would make Express believe the whole of
+ * `X-Forwarded-For`, and the left of that header is written by the caller — so
+ * `req.ip` would become an attacker-chosen value and the per-IP throttle on the
+ * punch endpoints could be sidestepped by inventing a new address per request.
+ * Trusting a single hop takes the address Railway actually observed.
+ *
+ * Even so, nothing security-relevant is **authorised** by IP.
  */
-app.set('trust proxy', true);
+app.set('trust proxy', 1);
 app.disable('x-powered-by');
 
 app.use(express.json());

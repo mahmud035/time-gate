@@ -278,6 +278,33 @@ describe('shifts that need a human', () => {
     expect(shift?.payableMs).toBe(2 * HOUR);
   });
 
+  /**
+   * Regression. `break-end-and-clock-out` writes both punches at one instant,
+   * and a database sort on time alone leaves their order undefined — so the
+   * same shift could read as complete or as an unclosed break depending on what
+   * came back. Either order must produce the same, correct answer.
+   */
+  it('reads a same-instant break-end and clock-out correctly in either order', () => {
+    const leaving = '2026-06-10T17:00';
+    const start = punch('clock-in', '2026-06-10T09:00');
+    const breakStart = punch('break-start', '2026-06-10T11:00');
+    const breakEnd = punch('break-end', leaving);
+    const clockOut = punch('clock-out', leaving);
+
+    for (const order of [
+      [start, breakStart, breakEnd, clockOut],
+      [start, breakStart, clockOut, breakEnd],
+      [clockOut, breakEnd, breakStart, start],
+    ]) {
+      const [shift] = shiftsOf(order);
+
+      expect(shift?.status).toBe('complete');
+      expect(shift?.anomalies).toEqual([]);
+      expect(shift?.breakMs).toBe(6 * HOUR);
+      expect(shift?.payableMs).toBe(2 * HOUR);
+    }
+  });
+
   // Gate 16
   it('ignores a voided punch when pairing', () => {
     const shifts = shiftsOf([

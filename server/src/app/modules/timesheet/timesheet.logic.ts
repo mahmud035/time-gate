@@ -1,5 +1,5 @@
 import { DateTime } from 'luxon';
-import { countsTowardsWork, type PunchEvent } from '../punch/punch.logic.js';
+import { byTime, countsTowardsWork, type PunchEvent } from '../punch/punch.logic.js';
 import type {
   Shift,
   ShiftAnomaly,
@@ -10,9 +10,6 @@ import type {
 
 const HOUR_MS = 60 * 60 * 1000;
 const MINUTE_MS = 60 * 1000;
-
-const byTime = (a: PunchEvent, b: PunchEvent): number =>
-  a.at.getTime() - b.at.getTime();
 
 /**
  * Three separate concerns, deliberately never conflated:

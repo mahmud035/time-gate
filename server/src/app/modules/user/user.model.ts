@@ -15,11 +15,15 @@ const userSchema = new Schema<IUser>(
     },
     passwordHash: { type: String, select: false },
 
-    pinHash: {
+    codeLookup: {
       type: String,
       select: false,
-      // Every employee punches, so every employee needs a PIN. A manager who
-      // only runs the dashboard does not — enforced here, not just in a service.
+      // Unique so two people can never share a code: one code stands for one
+      // identity, so a collision would file someone's hours under the wrong
+      // name. Sparse because a dashboard-only manager has no code at all.
+      index: { unique: true, sparse: true },
+      // Every employee punches, so every employee needs a code — enforced
+      // here, not only in a service.
       required: function (this: IUser): boolean {
         return this.role === 'employee';
       },
@@ -34,8 +38,6 @@ const userSchema = new Schema<IUser>(
     role: { type: String, enum: USER_ROLES, required: true },
     isActive: { type: Boolean, default: true },
 
-    failedPinAttempts: { type: Number, default: 0 },
-    pinLockedUntil: { type: Date, default: null },
     failedPasswordAttempts: { type: Number, default: 0 },
     passwordLockedUntil: { type: Date, default: null },
   },
@@ -44,6 +46,6 @@ const userSchema = new Schema<IUser>(
 
 /**
  * Hashes are `select: false` so they cannot leak by forgetting to project them
- * away. Anything needing one asks for it explicitly with `.select('+pinHash')`.
+ * away. Anything needing one asks for it explicitly with `.select('+codeLookup')`.
  */
 export const User = model<IUser>('User', userSchema);

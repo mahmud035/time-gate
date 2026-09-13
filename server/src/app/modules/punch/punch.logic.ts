@@ -30,8 +30,28 @@ export const countsTowardsWork = (punch: PunchEvent): boolean =>
 
 const HOUR_MS = 60 * 60 * 1000;
 
-const byTime = (a: PunchEvent, b: PunchEvent): number =>
-  a.at.getTime() - b.at.getTime();
+/**
+ * Canonical order for punches sharing one instant.
+ *
+ * `break-end-and-clock-out` writes two punches at the same millisecond, and a
+ * database sort on time alone leaves their relative order undefined — the same
+ * shift could come back as a clean day or as "a break-end with nothing to match
+ * it" depending on what the storage engine happened to return. Reading it the
+ * wrong way round turns a finished shift into a review row and pays zero, so
+ * the tie is broken here rather than left to chance.
+ *
+ * The order is the only one a shift can legitimately run in.
+ */
+const TYPE_ORDER: Record<PunchType, number> = {
+  'clock-in': 0,
+  'break-start': 1,
+  'break-end': 2,
+  'clock-out': 3,
+};
+
+/** The single ordering every part of the system reads punches in. */
+export const byTime = (a: PunchEvent, b: PunchEvent): number =>
+  a.at.getTime() - b.at.getTime() || TYPE_ORDER[a.type] - TYPE_ORDER[b.type];
 
 /**
  * What the punch screen offers, per state.
@@ -157,9 +177,63 @@ export const validateTransition = (
  * The punches an action writes.
  *
  * Only the compound action produces more than one, and both share a single
- * timestamp and idempotency key so a retry can never half-apply it.
+ * timestamp so a break that ends as someone leaves cannot be recorded a
+ * millisecond after their clock-out and read back as an unclosed break.
  */
 export const punchesForAction = (action: PunchAction): readonly PunchType[] =>
   action === 'break-end-and-clock-out'
     ? ['break-end', 'clock-out']
     : [action];
+
+/** The state a punch leaves behind, or null if it could not have happened. */
+const transition = (state: PunchState, type: PunchType): PunchState | null => {
+  switch (type) {
+    case 'clock-in':
+      return state === 'clocked-out' ? 'clocked-in' : null;
+    case 'break-start':
+      return state === 'clocked-in' ? 'on-break' : null;
+    case 'break-end':
+      return state === 'on-break' ? 'clocked-in' : null;
+    case 'clock-out':
+      return state === 'clocked-out' ? null : 'clocked-out';
+  }
+};
+
+/**
+ * Checks that a whole history could actually have happened.
+ *
+ * Run over the history a manager's correction *would* produce, before it is
+ * written. Fixing one shift must not quietly make a neighbouring one
+ * unreadable — inserting a clock-in in the middle of an open shift, or a
+ * break-end with no break to end.
+ *
+ * The stale-shift rule applies here exactly as it does live, so a history where
+ * someone forgot to clock out and simply started again the next morning stays
+ * valid. That is an everyday occurrence, not a contradiction.
+ */
+export const validateSequence = (
+  punches: readonly PunchEvent[],
+  openShiftLimitHours: number,
+): void => {
+  let state: PunchState = 'clocked-out';
+  let shiftStartedAt: Date | null = null;
+
+  for (const punch of punches.filter(countsTowardsWork).sort(byTime)) {
+    const stale =
+      shiftStartedAt !== null &&
+      punch.at.getTime() - shiftStartedAt.getTime() > openShiftLimitHours * HOUR_MS;
+    const from = stale ? 'clocked-out' : state;
+    const next = transition(from, punch.type);
+
+    if (next === null) {
+      throw new AppError(
+        StatusCodes.CONFLICT,
+        `That leaves an impossible sequence — a ${punch.type} with nothing to match it.`,
+      );
+    }
+
+    state = next;
+    if (punch.type === 'clock-in') shiftStartedAt = punch.at;
+    if (next === 'clocked-out') shiftStartedAt = null;
+  }
+};
