@@ -14,6 +14,7 @@
     "test": "npm --prefix server test",
     "typecheck": "npm --prefix server run typecheck && npm --prefix client run typecheck",
     "lint": "npm --prefix server run lint && npm --prefix client run lint",
-    "seed:manager": "npm --prefix server run seed:manager"
+    "seed:manager": "npm --prefix server run seed:manager",
+    "seed:staff": "npm --prefix server run seed:staff"
   }
 }

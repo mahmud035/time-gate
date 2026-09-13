@@ -17,8 +17,22 @@ export const api = axios.create({
   headers: { 'Content-Type': 'application/json' },
 });
 
-/** Endpoints that must never trigger a refresh attempt, or 401s would loop. */
-const NO_REFRESH_PATHS = ['/auth/login', '/auth/logout', '/auth/refresh'];
+/**
+ * Endpoints that must never trigger a refresh attempt.
+ *
+ * The auth ones would loop. The punch ones are a different problem: staff hold
+ * no session at all, so a 401 there means "that code isn't recognised" — not
+ * "your token expired". Left in, the interceptor answered a wrong code by
+ * attempting a rotation and then surfacing *that* failure, so the tablet read
+ * "You are not signed in" to someone who has never signed in to anything. It
+ * also fired a pointless second request on every mistyped digit.
+ */
+const NO_REFRESH_PATHS = [
+  '/auth/login',
+  '/auth/logout',
+  '/auth/refresh',
+  '/punch',
+];
 
 /** In-flight refresh, shared so a burst of 401s produces one rotation, not many. */
 let refreshInFlight: Promise<unknown> | null = null;

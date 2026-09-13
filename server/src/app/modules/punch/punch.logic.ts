@@ -101,32 +101,45 @@ const REFUSALS: Record<PunchState, string> = {
  */
 const replay = (
   punches: readonly PunchEvent[],
-): { state: PunchState; shiftStartedAt: Date | null } => {
+): {
+  state: PunchState;
+  shiftStartedAt: Date | null;
+  breakStartedAt: Date | null;
+} => {
   let state: PunchState = 'clocked-out';
   let shiftStartedAt: Date | null = null;
+  let breakStartedAt: Date | null = null;
 
   for (const punch of punches.filter(countsTowardsWork).sort(byTime)) {
     switch (punch.type) {
       case 'clock-in':
         state = 'clocked-in';
         shiftStartedAt = punch.at;
+        breakStartedAt = null;
         break;
       case 'break-start':
-        if (state === 'clocked-in') state = 'on-break';
+        if (state === 'clocked-in') {
+          state = 'on-break';
+          breakStartedAt = punch.at;
+        }
         break;
       case 'break-end':
-        if (state === 'on-break') state = 'clocked-in';
+        if (state === 'on-break') {
+          state = 'clocked-in';
+          breakStartedAt = null;
+        }
         break;
       case 'clock-out':
         if (state !== 'clocked-out') {
           state = 'clocked-out';
           shiftStartedAt = null;
+          breakStartedAt = null;
         }
         break;
     }
   }
 
-  return { state, shiftStartedAt };
+  return { state, shiftStartedAt, breakStartedAt };
 };
 
 /**
@@ -140,19 +153,34 @@ const replay = (
  * clock-out time would be inventing payroll data — it is left for the assembler
  * to flag and the manager to correct.
  */
+export const deriveStatus = (
+  punches: readonly PunchEvent[],
+  now: Date,
+  openShiftLimitHours: number,
+): { state: PunchState; since: Date | null } => {
+  const { state, shiftStartedAt, breakStartedAt } = replay(punches);
+
+  if (state === 'clocked-out' || shiftStartedAt === null) {
+    return { state: 'clocked-out', since: null };
+  }
+
+  const openFor = now.getTime() - shiftStartedAt.getTime();
+
+  if (openFor > openShiftLimitHours * HOUR_MS) {
+    return { state: 'clocked-out', since: null };
+  }
+
+  // What the screen says they have been doing *since*: the shift's own start
+  // while working, the break's start while on one. Not the last punch, which
+  // after a break-end would report the wrong thing entirely.
+  return { state, since: state === 'on-break' ? breakStartedAt : shiftStartedAt };
+};
+
 export const deriveState = (
   punches: readonly PunchEvent[],
   now: Date,
   openShiftLimitHours: number,
-): PunchState => {
-  const { state, shiftStartedAt } = replay(punches);
-
-  if (state === 'clocked-out' || shiftStartedAt === null) return 'clocked-out';
-
-  const openFor = now.getTime() - shiftStartedAt.getTime();
-
-  return openFor > openShiftLimitHours * HOUR_MS ? 'clocked-out' : state;
-};
+): PunchState => deriveStatus(punches, now, openShiftLimitHours).state;
 
 /** The actions the punch screen should render for a state. */
 export const nextActions = (state: PunchState): readonly PunchAction[] =>

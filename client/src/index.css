@@ -1,5 +1,9 @@
 @import 'tailwindcss';
 
+/* Self-hosted, so there is no third-party request on the critical path of the
+   one screen people stand in front of waiting to clock in. */
+@import '@fontsource-variable/inter';
+
 /**
  * Semantic tokens only — components never reference a raw colour.
  * Trustworthy over flashy: this is a payroll tool, not a landing page.
@@ -9,8 +13,19 @@
   --color-surface-raised: oklch(100% 0 0);
   --color-surface-sunken: oklch(96.5% 0.004 250);
 
+  /* Decorative only — dividers and card edges, never the sole signal for
+     anything. Not held to a contrast minimum. */
   --color-border: oklch(90% 0.006 250);
-  --color-border-strong: oklch(80% 0.01 250);
+  /**
+   * The boundary of an actual control, so WCAG 2.2 non-text contrast (1.4.11)
+   * applies: 3:1 against the surface behind it. Was 80%, which measured 1.87:1
+   * on white — and an empty keypad dot is nothing *but* this border, so at that
+   * value you could not tell how many digits were left to type.
+   * 64% measures 3.04:1 against the worst of the three surfaces it sits on —
+   * `surface-sunken`, which is the secondary button's hover state, and the one
+   * a check against white alone would have missed.
+   */
+  --color-border-strong: oklch(64% 0.01 250);
 
   --color-content: oklch(25% 0.02 250);
   --color-content-muted: oklch(52% 0.015 250);
@@ -21,15 +36,70 @@
   --color-success: oklch(58% 0.14 155);
   --color-warning: oklch(70% 0.15 75);
   --color-danger: oklch(56% 0.19 25);
+
+  --font-sans:
+    'Inter Variable', Inter, system-ui, -apple-system, 'Segoe UI', sans-serif;
 }
 
 @layer base {
+  /**
+   * v1 is light only, and this is what makes that stick.
+   *
+   * Without it a browser in dark mode force-inverts the page: measured on
+   * Chrome with the OS dark, `body` painted rgb(24, 26, 27) instead of the
+   * near-white surface token, and the whole screen came back washed out.
+   * Android tablets and phones ship auto-dark on, which is exactly the hardware
+   * this runs on at an entrance.
+   *
+   * It also makes native UI — scrollbars, form controls, the date picker the
+   * manager uses — render light to match rather than as dark widgets on a
+   * light page.
+   */
+  :root {
+    color-scheme: light;
+  }
+
   body {
     @apply bg-surface text-content antialiased;
-    font-family:
-      system-ui,
-      -apple-system,
-      'Segoe UI',
-      sans-serif;
+    font-family: var(--font-sans);
+  }
+
+  /**
+   * Times and durations line up in a column only if every digit is the same
+   * width. On a timesheet that is the difference between a total you can scan
+   * and one you have to read twice.
+   */
+  .tabular {
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+@layer base {
+  /**
+   * A wrong code shakes the dots rather than only swapping text. At a door,
+   * in a hurry, movement is noticed and a colour change is not.
+   */
+  @keyframes shake {
+    10%,
+    90% {
+      transform: translateX(-3px);
+    }
+    30%,
+    70% {
+      transform: translateX(5px);
+    }
+    50% {
+      transform: translateX(-5px);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
   }
 }

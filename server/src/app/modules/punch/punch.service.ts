@@ -14,6 +14,7 @@ import type { IPunch, PunchAction, PunchType } from './punch.interface.js';
 import { Punch } from './punch.model.js';
 import {
   deriveState,
+  deriveStatus,
   nextActions,
   punchesForAction,
   validateSequence,
@@ -49,17 +50,24 @@ const historyOf = async (userId: Types.ObjectId | string): Promise<IPunch[]> =>
 type StaffStatus = {
   name: string;
   state: ReturnType<typeof deriveState>;
+  /** When the current shift or break began. Null when clocked out. */
+  since: Date | null;
   nextActions: readonly PunchAction[];
   weekToDatePayableMs: number;
 };
 
 const statusOf = async (user: UserDoc, now: Date): Promise<StaffStatus> => {
   const history = await historyOf(user._id);
-  const state = deriveState(history, now, config.OPEN_SHIFT_LIMIT_HOURS);
+  const { state, since } = deriveStatus(
+    history,
+    now,
+    config.OPEN_SHIFT_LIMIT_HOURS,
+  );
 
   return {
     name: user.name,
     state,
+    since,
     nextActions: nextActions(state),
     weekToDatePayableMs: await timesheetService.weekToDatePayableMs(
       String(user._id),

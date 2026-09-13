@@ -48,7 +48,7 @@ export const LoginForm = ({ onSuccess }: { onSuccess: () => void }) => {
           inputMode="email"
           {...register('email')}
           aria-invalid={errors.email ? 'true' : 'false'}
-          className="mt-1 w-full rounded-lg border border-border bg-surface-raised px-3 py-2.5 outline-none focus:border-brand"
+          className="mt-1 w-full rounded-lg border border-border bg-surface-raised px-3 py-2.5 outline-none focus:border-brand focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-brand"
         />
         {errors.email && (
           <p className="mt-1 text-sm text-danger">{errors.email.message}</p>
@@ -65,7 +65,7 @@ export const LoginForm = ({ onSuccess }: { onSuccess: () => void }) => {
           autoComplete="current-password"
           {...register('password')}
           aria-invalid={errors.password ? 'true' : 'false'}
-          className="mt-1 w-full rounded-lg border border-border bg-surface-raised px-3 py-2.5 outline-none focus:border-brand"
+          className="mt-1 w-full rounded-lg border border-border bg-surface-raised px-3 py-2.5 outline-none focus:border-brand focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-brand"
         />
         {errors.password && (
           <p className="mt-1 text-sm text-danger">{errors.password.message}</p>
@@ -84,7 +84,7 @@ export const LoginForm = ({ onSuccess }: { onSuccess: () => void }) => {
       <button
         type="submit"
         disabled={login.isPending}
-        className="w-full rounded-lg bg-brand px-4 py-3 font-medium text-brand-contrast disabled:opacity-60"
+        className="w-full rounded-lg bg-brand px-4 py-3 font-medium text-brand-contrast transition-[filter] duration-100 hover:brightness-110 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:opacity-60"
       >
         {login.isPending ? 'Signing in…' : 'Sign in'}
       </button>
