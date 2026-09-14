@@ -16,6 +16,7 @@ import {
   type StaffStatus,
 } from '@/features/punch/punch.types.ts';
 import { formatDuration } from '@/utils/duration.ts';
+import { londonLongDate, londonTime } from '@/utils/time.ts';
 
 /** Long enough to read the confirmation, short enough not to hold up a queue. */
 const RETURN_AFTER_MS = 6000;
@@ -136,15 +137,9 @@ const PunchPage = () => {
         </div>
         <div className="text-right">
           <div className="tabular text-2xl font-semibold tracking-tight sm:text-3xl">
-            {now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}
+            {londonTime(now)}
           </div>
-          <div className="text-sm text-content-muted">
-            {now.toLocaleDateString('en-GB', {
-              weekday: 'long',
-              day: 'numeric',
-              month: 'long',
-            })}
-          </div>
+          <div className="text-sm text-content-muted">{londonLongDate(now)}</div>
         </div>
       </header>
 
@@ -237,16 +232,7 @@ const PunchPage = () => {
               {screen.title}
             </h1>
             <p className="tabular mt-4 text-xl text-content-muted sm:text-2xl">
-              {new Date(screen.at).toLocaleTimeString('en-GB', {
-                hour: '2-digit',
-                minute: '2-digit',
-              })}
-              {' · '}
-              {new Date(screen.at).toLocaleDateString('en-GB', {
-                weekday: 'long',
-                day: 'numeric',
-                month: 'long',
-              })}
+              {londonTime(screen.at)} · {londonLongDate(screen.at)}
             </p>
 
             <div className="mx-auto mt-9 max-w-[26rem] rounded-2xl border border-border bg-surface-raised p-6">

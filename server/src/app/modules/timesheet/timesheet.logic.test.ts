@@ -318,6 +318,46 @@ describe('shifts that need a human', () => {
   });
 });
 
+/**
+ * A shift is derived, so there is nothing to point at when correcting one
+ * except the punches behind it. Without these ids the manager's "fix this"
+ * has no target.
+ */
+describe('shifts carry the punch ids a correction needs', () => {
+  const withId = (id: string, type: PunchEvent['type'], local: string): PunchEvent => ({
+    id,
+    type,
+    at: at(local),
+  });
+
+  it('threads the id of every punch it paired', () => {
+    const [shift] = shiftsOf([
+      withId('in-1', 'clock-in', '2026-06-10T09:00'),
+      withId('bs-1', 'break-start', '2026-06-10T11:00'),
+      withId('be-1', 'break-end', '2026-06-10T11:15'),
+      withId('out-1', 'clock-out', '2026-06-10T17:00'),
+    ]);
+
+    expect(shift?.clockInId).toBe('in-1');
+    expect(shift?.clockOutId).toBe('out-1');
+    expect(shift?.breaks[0]?.startId).toBe('bs-1');
+    expect(shift?.breaks[0]?.endId).toBe('be-1');
+  });
+
+  it('leaves the missing punch null, so the UI knows to insert rather than amend', () => {
+    const [shift] = shiftsOf([
+      withId('in-2', 'clock-in', '2026-06-10T09:00'),
+      withId('bs-2', 'break-start', '2026-06-10T11:00'),
+      withId('out-2', 'clock-out', '2026-06-10T17:00'),
+    ]);
+
+    expect(shift?.clockInId).toBe('in-2');
+    expect(shift?.breaks[0]?.startId).toBe('bs-2');
+    expect(shift?.breaks[0]?.endId).toBeNull();
+    expect(shift?.status).toBe('needs-review');
+  });
+});
+
 describe('rounding happens once, at the end', () => {
   it('sums milliseconds before formatting, never the reverse', () => {
     // Three shifts of 2h20m01s. Rounded per shift then summed this reads 7:00;

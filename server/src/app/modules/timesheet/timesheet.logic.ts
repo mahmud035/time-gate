@@ -31,6 +31,8 @@ const localDate = (at: Date, timezone: string): string =>
 type Draft = {
   clockIn: Date;
   clockOut: Date | null;
+  clockInId: string | null;
+  clockOutId: string | null;
   breaks: ShiftBreak[];
 };
 
@@ -58,13 +60,25 @@ export const pairShifts = (
         // A new clock-in abandons any shift still open. The old one is kept
         // exactly as it was and flagged below; no clock-out is invented for it.
         if (current) drafts.push(current);
-        current = { clockIn: punch.at, clockOut: null, breaks: [] };
+        current = {
+          clockIn: punch.at,
+          clockOut: null,
+          clockInId: punch.id ?? null,
+          clockOutId: null,
+          breaks: [],
+        };
         openBreak = null;
         break;
 
       case 'break-start':
         if (current && !openBreak) {
-          openBreak = { start: punch.at, end: null, ms: 0 };
+          openBreak = {
+            start: punch.at,
+            end: null,
+            ms: 0,
+            startId: punch.id ?? null,
+            endId: null,
+          };
           current.breaks.push(openBreak);
         }
         break;
@@ -73,6 +87,7 @@ export const pairShifts = (
         if (openBreak) {
           openBreak.end = punch.at;
           openBreak.ms = punch.at.getTime() - openBreak.start.getTime();
+          openBreak.endId = punch.id ?? null;
           openBreak = null;
         }
         break;
@@ -80,6 +95,7 @@ export const pairShifts = (
       case 'clock-out':
         if (current) {
           current.clockOut = punch.at;
+          current.clockOutId = punch.id ?? null;
           drafts.push(current);
           current = null;
           openBreak = null;
@@ -138,6 +154,8 @@ const finalise = (
     date: localDate(draft.clockIn, options.timezone),
     clockIn: draft.clockIn,
     clockOut: draft.clockOut,
+    clockInId: draft.clockInId,
+    clockOutId: draft.clockOutId,
     breaks: draft.breaks,
     workedMs,
     breakMs,

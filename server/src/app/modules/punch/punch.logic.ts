@@ -14,6 +14,8 @@ import type {
  * timesheet assembler without any of them dragging in a model.
  */
 export type PunchEvent = {
+  /** Present on stored punches; absent on one being validated before it exists. */
+  id?: string;
   type: PunchType;
   at: Date;
   /** Soft-deleted punches are ignored everywhere. Absent means it counts. */

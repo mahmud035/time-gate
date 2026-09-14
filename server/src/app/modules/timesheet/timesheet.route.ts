@@ -8,6 +8,7 @@ const router = Router();
 
 router.use(requireAuth, requireRole('manager'));
 
+router.get('/today', timesheetController.today);
 router.get('/', validateRequest(timesheetValidation.range), timesheetController.list);
 router.get(
   '/export',

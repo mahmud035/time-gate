@@ -11,7 +11,6 @@ import { AppError } from '../../utils/AppError.js';
 import { timesheetService } from '../timesheet/timesheet.service.js';
 import { userService, type UserDoc } from '../user/user.service.js';
 import type { IPunch, PunchAction, PunchType } from './punch.interface.js';
-import { Punch } from './punch.model.js';
 import {
   deriveState,
   deriveStatus,
@@ -20,6 +19,7 @@ import {
   validateSequence,
   validateTransition,
 } from './punch.logic.js';
+import { Punch } from './punch.model.js';
 
 const DUPLICATE_KEY = 11000;
 const LOCAL_FORMAT = "yyyy-MM-dd'T'HH:mm";
@@ -85,7 +85,10 @@ const statusOf = async (user: UserDoc, now: Date): Promise<StaffStatus> => {
  * keeps a mistyping queue — or somebody probing — from closing the door on
  * everyone sharing the tablet's address.
  */
-const requireStaff = async (code: string, address: string): Promise<UserDoc> => {
+const requireStaff = async (
+  code: string,
+  address: string,
+): Promise<UserDoc> => {
   const user = await userService.findByCode(code);
 
   if (!user) {
@@ -162,7 +165,10 @@ const record = async (input: {
     createdBy: user._id,
     // The index is unique, so a compound action cannot reuse the bare key. The
     // first punch carries it, which is what a replay looks for.
-    idempotencyKey: index === 0 ? input.idempotencyKey : `${input.idempotencyKey}#${index + 1}`,
+    idempotencyKey:
+      index === 0
+        ? input.idempotencyKey
+        : `${input.idempotencyKey}#${index + 1}`,
   }));
 
   try {
@@ -190,7 +196,10 @@ const parseLocalTime = (local: string): Date => {
   const parsed = DateTime.fromISO(local, { zone: config.TIMEZONE });
 
   if (!parsed.isValid) {
-    throw new AppError(StatusCodes.BAD_REQUEST, 'That is not a valid date and time');
+    throw new AppError(
+      StatusCodes.BAD_REQUEST,
+      'That is not a valid date and time',
+    );
   }
 
   if (parsed.toFormat(LOCAL_FORMAT) !== local) {
@@ -240,7 +249,9 @@ const managerAmend = async (input: {
   punchId: string;
   local: string;
 }): Promise<IPunch> => {
-  const punch: HydratedDocument<IPunch> | null = await Punch.findById(input.punchId);
+  const punch: HydratedDocument<IPunch> | null = await Punch.findById(
+    input.punchId,
+  );
 
   if (!punch || punch.voidedAt) {
     throw new AppError(StatusCodes.NOT_FOUND, 'No such punch');
@@ -273,7 +284,10 @@ const managerVoid = async (punchId: string): Promise<void> => {
 
   const history = await historyOf(punch.userId);
 
-  validateSequence(withoutPunch(history, punchId), config.OPEN_SHIFT_LIMIT_HOURS);
+  validateSequence(
+    withoutPunch(history, punchId),
+    config.OPEN_SHIFT_LIMIT_HOURS,
+  );
 
   punch.voidedAt = new Date();
   await punch.save();

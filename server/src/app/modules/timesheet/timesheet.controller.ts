@@ -15,6 +15,15 @@ const rangeOf = (req: Parameters<RequestHandler>[0]) => {
   return { from: startOfLocalDay(from), to: startOfLocalDay(to) };
 };
 
+/** Who is on shift, on a break, or not in — the manager's first screen. */
+const today: RequestHandler = async (_req, res) => {
+  sendResponse(res, {
+    statusCode: StatusCodes.OK,
+    message: 'Today',
+    data: { staff: await timesheetService.todayBoard() },
+  });
+};
+
 const list: RequestHandler = async (req, res) => {
   const { from, to } = rangeOf(req);
 
@@ -44,4 +53,4 @@ const exportCsv: RequestHandler = async (req, res) => {
   res.status(StatusCodes.OK).send(csv);
 };
 
-export const timesheetController = { list, exportCsv };
+export const timesheetController = { today, list, exportCsv };

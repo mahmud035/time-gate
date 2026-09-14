@@ -3,6 +3,13 @@ export type ShiftBreak = {
   end: Date | null;
   /** Zero until the break is closed. Never guessed. */
   ms: number;
+  /**
+   * The punches behind this break. A manager fixing a forgotten break-end has
+   * to amend or insert one specific punch, and an id is the only way to say
+   * which — a shift is derived, so there is nothing else to point at.
+   */
+  startId: string | null;
+  endId: string | null;
 };
 
 export const SHIFT_STATUSES = ['complete', 'open', 'needs-review'] as const;
@@ -28,6 +35,9 @@ export type Shift = {
   date: string;
   clockIn: Date;
   clockOut: Date | null;
+  /** See `ShiftBreak`: what a correction targets. Null when the punch is missing. */
+  clockInId: string | null;
+  clockOutId: string | null;
   breaks: ShiftBreak[];
   /** Clock-out minus clock-in. Zero while the shift is open. */
   workedMs: number;

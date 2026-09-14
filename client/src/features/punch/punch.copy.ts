@@ -1,3 +1,4 @@
+import { londonTime } from '@/utils/time.ts';
 import type { PunchAction, PunchState } from './punch.types.ts';
 
 /**
@@ -32,12 +33,7 @@ export const STATE_LABEL: Record<PunchState, string> = {
 export const stateDetail = (state: PunchState, since: string | null): string => {
   if (state === 'clocked-out') return 'Tap below to start your shift';
 
-  const at = since
-    ? new Date(since).toLocaleTimeString('en-GB', {
-        hour: '2-digit',
-        minute: '2-digit',
-      })
-    : null;
+  const at = since ? londonTime(since) : null;
 
   if (state === 'on-break') {
     return at ? `Break started at ${at}` : 'Break in progress';

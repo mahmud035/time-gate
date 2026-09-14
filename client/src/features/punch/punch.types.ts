@@ -1,6 +1,9 @@
 /** Mirrors the backend `PunchState`. A drift here breaks the build. */
 export type PunchState = 'clocked-out' | 'clocked-in' | 'on-break';
 
+/** Mirrors the backend `PunchType` — the four events actually stored. */
+export type PunchType = 'clock-in' | 'break-start' | 'break-end' | 'clock-out';
+
 /** Mirrors the backend `PunchAction`. */
 export type PunchAction =
   | 'clock-in'

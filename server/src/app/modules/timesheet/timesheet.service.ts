@@ -1,5 +1,6 @@
 import { DateTime } from 'luxon';
 import { config } from '../../../config/index.js';
+import { deriveStatus, type PunchEvent } from '../punch/punch.logic.js';
 import type { IPunch } from '../punch/punch.interface.js';
 import { Punch } from '../punch/punch.model.js';
 import { User } from '../user/user.model.js';
@@ -47,10 +48,18 @@ const shiftsInRange = async (
     .sort({ at: 1 })
     .lean<IPunch[]>();
 
-  const byUser = new Map<string, IPunch[]>();
+  // Stored punches carry `_id`; the pure logic works in plain `id` so it never
+  // has to know about Mongoose. The mapping happens once, here.
+  const byUser = new Map<string, PunchEvent[]>();
   for (const punch of punches) {
     const key = String(punch.userId);
-    byUser.set(key, [...(byUser.get(key) ?? []), punch]);
+    const event: PunchEvent = {
+      id: String(punch._id),
+      type: punch.type,
+      at: punch.at,
+      voidedAt: punch.voidedAt,
+    };
+    byUser.set(key, [...(byUser.get(key) ?? []), event]);
   }
 
   const fromDate = localDate(from);
@@ -152,8 +161,80 @@ const exportCsv = async (from: Date, to: Date): Promise<string> => {
   );
 };
 
+/**
+ * Who is here right now.
+ *
+ * Every active staff member appears, including the ones who have not punched at
+ * all — "not in" is the answer the manager is looking for as much as "on shift
+ * is", and someone with no punches today has no shift to derive it from.
+ */
+const todayBoard = async (
+  now: Date = new Date(),
+): Promise<
+  {
+    userId: string;
+    name: string;
+    state: ReturnType<typeof deriveStatus>['state'];
+    since: Date | null;
+    todayPayableMs: number;
+  }[]
+> => {
+  const staff = await User.find({ role: 'employee', isActive: true })
+    .sort({ name: 1 })
+    .lean();
+
+  const startOfToday = DateTime.fromJSDate(now, { zone: config.TIMEZONE })
+    .startOf('day')
+    .toJSDate();
+  const tomorrow = DateTime.fromJSDate(startOfToday, { zone: config.TIMEZONE })
+    .plus({ days: 1 })
+    .toJSDate();
+
+  // The state machine needs the whole history to know whether a shift is still
+  // open, so this reads back further than today — a shift that began last night
+  // is still the shift someone is standing in.
+  const lookback = new Date(
+    startOfToday.getTime() - config.OPEN_SHIFT_LIMIT_HOURS * HOUR_MS,
+  );
+  const punches = await Punch.find({
+    userId: { $in: staff.map((user) => user._id) },
+    voidedAt: null,
+    at: { $gte: lookback, $lt: tomorrow },
+  })
+    .sort({ at: 1 })
+    .lean<IPunch[]>();
+
+  const byUser = new Map<string, PunchEvent[]>();
+  for (const punch of punches) {
+    const key = String(punch.userId);
+    byUser.set(key, [
+      ...(byUser.get(key) ?? []),
+      { id: String(punch._id), type: punch.type, at: punch.at, voidedAt: punch.voidedAt },
+    ]);
+  }
+
+  const todayDate = localDate(now);
+
+  return staff.map((user) => {
+    const events = byUser.get(String(user._id)) ?? [];
+    const { state, since } = deriveStatus(
+      events,
+      now,
+      config.OPEN_SHIFT_LIMIT_HOURS,
+    );
+    const todayPayableMs = sumPayableMs(
+      pairShifts(String(user._id), events, options, now).filter(
+        (shift) => shift.date === todayDate,
+      ),
+    );
+
+    return { userId: String(user._id), name: user.name, state, since, todayPayableMs };
+  });
+};
+
 export const timesheetService = {
   shiftsInRange,
+  todayBoard,
   weekToDatePayableMs,
   timesheet,
   exportCsv,

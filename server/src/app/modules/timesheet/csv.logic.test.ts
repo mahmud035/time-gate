@@ -10,6 +10,8 @@ const shift = (payableMs: number): Shift => ({
   date: '2026-06-10',
   clockIn: new Date(),
   clockOut: new Date(),
+  clockInId: null,
+  clockOutId: null,
   breaks: [],
   workedMs: payableMs,
   breakMs: 0,
