@@ -97,7 +97,23 @@ export const createCapturer = ({ page, baseUrl, outDir }) => {
     console.log(`  ${name}  ${(buffer.length / 1024).toFixed(0)} KB`);
   };
 
-  return { viewport, goto, click, clickLabelled, fill, shoot };
+  /** Real offline, not a simulated flag — the service worker behaves as it would. */
+  const setOffline = async (offline) => {
+    await page.send('Network.enable');
+    await page.send('Network.emulateNetworkConditions', {
+      offline,
+      latency: 0,
+      downloadThroughput: offline ? 0 : -1,
+      uploadThroughput: offline ? 0 : -1,
+    });
+  };
+
+  const enterCode = async (code) => {
+    for (const digit of code.split('')) await click(digit);
+    await wait(1800);
+  };
+
+  return { viewport, goto, click, clickLabelled, fill, shoot, setOffline, enterCode };
 };
 
 /**
@@ -106,45 +122,94 @@ export const createCapturer = ({ page, baseUrl, outDir }) => {
  * Each staff-facing shot is taken at tablet proportions and each manager shot at
  * desktop proportions, because that is where each is actually used.
  */
-export const captureAll = async (capture, { slug, email, password }) => {
-  await capture.viewport(820, 900);
+/**
+ * Every screen either guide needs, in one pass.
+ *
+ * The staff-facing shots are taken at tablet proportions and the manager's at
+ * desktop, because that is where each is actually used. The page is reloaded
+ * between staff states rather than waiting out the confirmation's auto-return,
+ * which keeps the sequence deterministic.
+ */
+export const captureAll = async (capture, { slug, code, email, password }) => {
+  const punchPage = `/p/${slug}`;
 
-  await capture.goto(`/p/${slug}`);
-  await capture.shoot('01-keypad');
+  /**
+   * Sized to the keypad rather than to a device. The punch screen is
+   * `min-h-dvh` and centres its content, so a taller viewport only pads the
+   * shot with empty space that cannot be clipped away afterwards.
+   */
+  await capture.viewport(820, 740);
 
-  for (const digit of ['1', '1', '1', '1']) await capture.click(digit);
-  await wait(1800);
-  await capture.shoot('02-identified');
+  await capture.goto(punchPage);
+  await capture.shoot('s01-keypad');
+
+  await capture.enterCode(code);
+  await capture.shoot('s02-clocked-out');
 
   await capture.click('Clock in');
   await wait(1800);
-  await capture.shoot('03-confirmed');
+  await capture.shoot('s03-confirmed');
+
+  await capture.goto(punchPage);
+  await capture.enterCode(code);
+  await capture.shoot('s04-working');
+
+  await capture.click('Start break');
+  await wait(1800);
+  await capture.goto(punchPage);
+  await capture.enterCode(code);
+  await capture.shoot('s05-on-break');
+
+  await capture.goto(punchPage);
+  await capture.enterCode('9999');
+  await capture.shoot('s06-wrong-code');
+
+  /**
+   * Reload first, or the offline banner appears on top of the previous shot's
+   * "code not recognised" message — a picture captioned "no connection" that
+   * plainly says something else. The viewport grows because the banner adds
+   * height, and the clip would otherwise slice through the bottom row of keys.
+   */
+  await capture.goto(punchPage);
+  await capture.viewport(820, 820);
+  await capture.setOffline(true);
+  await wait(1500);
+  await capture.shoot('s07-offline');
+  await capture.setOffline(false);
+  await wait(1500);
+  await capture.viewport(820, 740);
+
+  // Leave the demo person clocked out, so the manager screens read sensibly.
+  await capture.goto(punchPage);
+  await capture.enterCode(code);
+  await capture.click('End break & clock out');
+  await wait(1800);
 
   await capture.viewport(1340, 720);
 
   await capture.goto('/login');
   await capture.fill('email', email);
   await capture.fill('password', password);
-  await capture.shoot('04-login');
+  await capture.shoot('m01-login');
 
   await capture.click('Sign in');
   await wait(2600);
-  await capture.shoot('05-today');
+  await capture.shoot('m02-today');
 
   await capture.goto('/dashboard/records');
   // The seeded shifts are in the previous week, so step back before capturing.
   await capture.clickLabelled('Previous week');
   await wait(1800);
-  await capture.shoot('06-records');
+  await capture.shoot('m03-records');
 
   await capture.click('Fix');
   await wait(900);
   await capture.fill('correction-at', '2026-09-09T17:00');
   await wait(300);
-  await capture.shoot('07-correction');
+  await capture.shoot('m04-correction');
   await capture.clickLabelled('Close');
   await wait(600);
 
   await capture.goto('/dashboard/staff');
-  await capture.shoot('08-staff');
+  await capture.shoot('m05-staff');
 };

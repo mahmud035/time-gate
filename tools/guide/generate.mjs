@@ -1,13 +1,15 @@
 import { mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
-import { dirname, join, resolve } from 'node:path';
+import { join, resolve } from 'node:path';
 import { connect, wait } from './cdp.mjs';
 import { launchChrome } from './chrome.mjs';
 import { captureAll, createCapturer } from './capture.mjs';
-import { buildDocument } from './document.mjs';
-import { MANAGER, seedDemo } from './seed-demo.mjs';
+import { buildManagerGuide } from './document.mjs';
+import { buildStaffGuide } from './staff-document.mjs';
+import { DEMO_CODE, MANAGER, seedDemo } from './seed-demo.mjs';
 
 /**
- * Rebuilds docs/TimeGate-Guide.pdf from the running app.
+ * Rebuilds both PDF guides — the manager's and the staff one — from the
+ * running app.
  *
  *   npm run guide
  *
@@ -17,7 +19,7 @@ import { MANAGER, seedDemo } from './seed-demo.mjs';
  */
 const ROOT = resolve(import.meta.dirname, '../..');
 const APP = process.env.GUIDE_APP_URL ?? 'http://127.0.0.1:5000';
-const OUT = process.env.GUIDE_OUT ?? join(ROOT, 'docs/TimeGate-Guide.pdf');
+const OUT_DIR = process.env.GUIDE_OUT_DIR ?? join(ROOT, 'docs');
 const WORK = join(ROOT, 'node_modules/.cache/timegate-guide');
 const FONT = join(ROOT, 'client/dist/assets');
 
@@ -69,52 +71,66 @@ const main = async () => {
 
     console.log('\nCapturing screenshots');
     const capture = createCapturer({ page, baseUrl: APP, outDir: WORK });
-    await captureAll(capture, { slug, email: MANAGER.email, password: MANAGER.password });
+    await captureAll(capture, {
+      slug,
+      code: DEMO_CODE,
+      email: MANAGER.email,
+      password: MANAGER.password,
+    });
 
-    console.log('\nBuilding the document');
     const asBase64 = (path) => readFileSync(path).toString('base64');
-    const html = buildDocument({
+    const assets = {
       img: (name) => `data:image/png;base64,${asBase64(join(WORK, name))}`,
       font: `data:font/woff2;base64,${asBase64(findInterFont())}`,
       icon: readFileSync(join(ROOT, 'client/public/favicon.svg'), 'utf8'),
-    });
-    const htmlPath = join(WORK, 'guide.html');
-    writeFileSync(htmlPath, html);
+    };
 
-    console.log('Printing to PDF');
-    await page.send('Emulation.setDeviceMetricsOverride', {
-      width: 1200,
-      height: 1600,
-      deviceScaleFactor: 1,
-      mobile: false,
-    });
-    await page.send('Page.navigate', { url: `file://${htmlPath}` });
-    await wait(3500);
-    // Paginating before the webfont resolves shifts every line on every page.
-    await page.evaluate('await document.fonts.ready; return true;');
-    await wait(800);
+    const guides = [
+      { name: 'TimeGate-Guide.pdf', label: 'manager', html: buildManagerGuide(assets), footer: 'TimeGate — a guide for managers' },
+      { name: 'TimeGate-Staff-Guide.pdf', label: 'staff', html: buildStaffGuide(assets), footer: 'TimeGate — clocking in and out' },
+    ];
 
-    const { data } = await page.send('Page.printToPDF', {
-      printBackground: true,
-      paperWidth: 8.27,
-      paperHeight: 11.69,
-      marginTop: 0.71,
-      marginBottom: 0.79,
-      marginLeft: 0.67,
-      marginRight: 0.67,
-      displayHeaderFooter: true,
-      headerTemplate: '<div></div>',
-      footerTemplate:
-        '<div style="width:100%;font-family:Helvetica,Arial,sans-serif;font-size:7.5pt;' +
-        'color:#8b95a1;padding:0 17mm;display:flex;justify-content:space-between;">' +
-        '<span>TimeGate — a guide for managers</span><span class="pageNumber"></span></div>',
-    });
+    mkdirSync(OUT_DIR, { recursive: true });
 
-    mkdirSync(dirname(OUT), { recursive: true });
-    writeFileSync(OUT, Buffer.from(data, 'base64'));
+    for (const guide of guides) {
+      console.log(`\nPrinting the ${guide.label} guide`);
 
-    const bytes = readFileSync(OUT).length;
-    console.log(`\n  ${OUT}  ${(bytes / 1024 / 1024).toFixed(2)} MB\n`);
+      const htmlPath = join(WORK, `${guide.label}.html`);
+      writeFileSync(htmlPath, guide.html);
+
+      await page.send('Emulation.setDeviceMetricsOverride', {
+        width: 1200,
+        height: 1600,
+        deviceScaleFactor: 1,
+        mobile: false,
+      });
+      await page.send('Page.navigate', { url: `file://${htmlPath}` });
+      await wait(3500);
+      // Paginating before the webfont resolves shifts every line on every page.
+      await page.evaluate('await document.fonts.ready; return true;');
+      await wait(800);
+
+      const { data } = await page.send('Page.printToPDF', {
+        printBackground: true,
+        paperWidth: 8.27,
+        paperHeight: 11.69,
+        marginTop: 0.71,
+        marginBottom: 0.79,
+        marginLeft: 0.67,
+        marginRight: 0.67,
+        displayHeaderFooter: true,
+        headerTemplate: '<div></div>',
+        footerTemplate:
+          '<div style="width:100%;font-family:Helvetica,Arial,sans-serif;font-size:7.5pt;' +
+          'color:#8b95a1;padding:0 17mm;display:flex;justify-content:space-between;">' +
+          `<span>${guide.footer}</span><span class="pageNumber"></span></div>`,
+      });
+
+      const target = join(OUT_DIR, guide.name);
+      writeFileSync(target, Buffer.from(data, 'base64'));
+      console.log(`  ${target}  ${(Buffer.from(data, 'base64').length / 1024 / 1024).toFixed(2)} MB`);
+    }
+
   } finally {
     page?.close();
     await chrome.stop();

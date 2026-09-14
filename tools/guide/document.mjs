@@ -10,7 +10,7 @@
  * other. If they drift often enough to be a nuisance, generate this from the
  * markdown instead.
  */
-export const buildDocument = ({ img, font, icon }) => {
+export const buildManagerGuide = ({ img, font, icon }) => {
 const shot = (file, caption) => `
   <figure class="shot">
     <img src="${img(file)}" alt="">
@@ -149,7 +149,7 @@ const shot = (file, caption) => `
   <h2>What it does</h2>
   <p class="lead">Staff clock in and out with a 4-digit code, on the tablet at the entrance or on their own phone.</p>
   <p>A normal day is four taps: <strong>clock in</strong>, <strong>start break</strong>, <strong>end break</strong>, <strong>clock out</strong>. Breaks can be taken as often as needed — tea and lunch are both just breaks.</p>
-  ${shot('01-keypad.png', 'The screen staff see. They enter their own 4-digit code — nothing else.')}
+  ${shot('s01-keypad.png', 'The screen staff see. They enter their own 4-digit code — nothing else.')}
 </section>
 
 <section>
@@ -173,8 +173,8 @@ const shot = (file, caption) => `
   <h2>What a staff member sees</h2>
   <p>They enter their code, the screen greets them by name and offers only what makes sense next — someone already clocked in is not offered "clock in" again.</p>
   <div class="shot pair">
-    <img src="${img('02-identified.png')}" alt="">
-    <img src="${img('03-confirmed.png')}" alt="">
+    <img src="${img('s02-clocked-out.png')}" alt="">
+    <img src="${img('s03-confirmed.png')}" alt="">
   </div>
   <figcaption>Left: after entering a code. Right: the confirmation, which returns to the keypad by itself after a few seconds so the next person never sees a colleague's hours.</figcaption>
   <div class="note">
@@ -185,7 +185,7 @@ const shot = (file, caption) => `
 <section>
   <h2>Adding someone</h2>
   <p>On <strong>Staff</strong> → <em>Add a staff member</em>. You will see their code <strong>once</strong>. It cannot be shown again, so send it before you close the panel. If it gets lost, issue a new one — the old one stops working immediately.</p>
-  ${shot('08-staff.png', 'The Staff screen. A newly issued code appears at the top, once.')}
+  ${shot('m05-staff.png', 'The Staff screen. A newly issued code appears at the top, once.')}
   <p>Send them one message with both halves:</p>
   <div class="msg">
     <p>Hi [name] — clock in and out here: [punch link]</p>
@@ -202,9 +202,9 @@ const shot = (file, caption) => `
   <h2>Fixing a forgotten punch</h2>
   <p class="lead">People forget to clock out. It will happen in the first week.</p>
   <p>Those shifts appear on <strong>Records</strong> marked <strong>Needs review</strong>, with <strong>0:00</strong> payable and a banner above the table. The real times they did record are kept exactly as they are — nothing is guessed.</p>
-  ${shot('06-records.png', 'The Records screen. The flagged shift is the one that needs a decision from you.')}
+  ${shot('m03-records.png', 'The Records screen. The flagged shift is the one that needs a decision from you.')}
   <p>Press <strong>Fix</strong>, enter the time that actually happened, and save. The totals update immediately.</p>
-  ${shot('07-correction.png', 'Correcting a shift. Times are read as London time.')}
+  ${shot('m04-correction.png', 'Correcting a shift. Times are read as London time.')}
   <div class="callout">
     <div class="label">Why zero and not an estimate</div>
     <p>The system will not invent a clock-out time, because an invented time is an invented wage. Zero and a warning is a number you will notice. A plausible guess is one you will not.</p>
@@ -221,7 +221,7 @@ const shot = (file, caption) => `
     <p>Clear anything marked <strong>Needs review</strong>. The banner tells you how many. Exporting with them unresolved means those shifts pay zero.</p>
   </div>
   <p>Individual break times are on screen only, not in the export, so the file stays one row per shift and can be checked by hand.</p>
-  ${shot('05-today.png', 'The Today screen shows who is on shift, on a break, or not in.')}
+  ${shot('m02-today.png', 'The Today screen shows who is on shift, on a break, or not in.')}
 </section>
 
 <section>

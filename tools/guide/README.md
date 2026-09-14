@@ -1,7 +1,17 @@
-# The manager's guide
+# The printed guides
 
-Rebuilds `docs/TimeGate-Guide.pdf` — the illustrated PDF handed to whoever runs
-TimeGate day to day.
+Rebuilds both illustrated PDFs in `docs/` from the running app:
+
+| File | For | Covers |
+|---|---|---|
+| `TimeGate-Guide.pdf` | the manager | the whole product, including corrections and the payroll export |
+| `TimeGate-Staff-Guide.pdf` | everyone else | only what one person does: code, clock in, break, clock out, and what to do when something goes wrong |
+
+The staff one deliberately says nothing about exports, corrections or hosting.
+It is written for someone reading it once, in a hurry, possibly not in their
+first language — short sentences, larger type, one idea per block. Anything
+workplace-specific is a bracketed placeholder, because these files are committed
+and the punch link and codes are not.
 
 ```bash
 npm run build                 # the tool reads the server's compiled code and the client's fonts
@@ -21,21 +31,25 @@ browser is driven straight over the DevTools Protocol.
    production configuration, but it *will* overwrite those four names and a
    `manager@timegate.example` account in whatever database the server config
    points at. Run it against development.
-2. **Captures eight screenshots** by driving the real UI — entering a code,
-   clocking in, opening the correction dialog — in a private headless Chrome
-   with no extensions, so nothing recolours the page or draws a cursor over it.
-3. **Builds the document** with the images and Inter embedded, then prints it to
-   A4 through Chrome.
+2. **Captures twelve screenshots** by driving the real UI — entering a code,
+   clocking in, starting a break, mistyping a code, losing the connection,
+   opening the correction dialog — in a private headless Chrome with no
+   extensions, so nothing recolours the page or draws a cursor over it. Going
+   offline is real network emulation, not a faked flag, so the service worker
+   behaves exactly as it would at the door.
+3. **Builds both documents** with the images and Inter embedded, then prints
+   each to A4 through Chrome.
 
 Everything temporary — the browser profile, the screenshots, the intermediate
-HTML — is removed afterwards. Only the PDF is kept.
+HTML — is removed afterwards. Only the PDFs are kept.
 
 ## Files
 
 | File | What it is |
 |---|---|
 | `generate.mjs` | The orchestrator. Start here. |
-| `document.mjs` | The wording and the print styling. |
+| `document.mjs` | The manager guide's wording and print styling. |
+| `staff-document.mjs` | The staff guide's wording and print styling. |
 | `capture.mjs` | The screenshot sequence and the clipping. |
 | `seed-demo.mjs` | The demo people and their week. |
 | `chrome.mjs` | Launches and disposes of a private headless Chrome. |
@@ -49,8 +63,13 @@ is what gets emailed — but a change to one needs the same change to the other.
 If that drifts often enough to be a nuisance, generate the document from the
 markdown instead of keeping a second copy.
 
-**The cover says "Prepared for review · September 2026"** and the last section
-describes the hosting as a personal account. Both want revisiting after go-live.
+**The manager guide's cover says "Prepared for review · September 2026"** and its
+last section describes the hosting as a personal account. Both want revisiting
+after go-live.
+
+**Both guides are in English only.** If the workforce is not English-first, a
+translated staff guide is worth more than anything else in this folder — that is
+the one document people actually have to act on.
 
 **A missing button fails the run.** That is deliberate: a silent miss once
 produced a screenshot of the wrong screen that looked entirely plausible until
