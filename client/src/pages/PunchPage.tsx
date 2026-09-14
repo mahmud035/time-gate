@@ -1,4 +1,4 @@
-import { Check, Clock } from 'lucide-react';
+import { Check, Clock, WifiOff } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useParams } from 'react-router';
 import { getApiErrorMessage } from '@/api/axios.ts';
@@ -15,6 +15,7 @@ import {
   type PunchAction,
   type StaffStatus,
 } from '@/features/punch/punch.types.ts';
+import { useOnline } from '@/hooks/useOnline.ts';
 import { formatDuration } from '@/utils/duration.ts';
 import { londonLongDate, londonTime } from '@/utils/time.ts';
 
@@ -41,6 +42,7 @@ const useClock = () => {
 const PunchPage = () => {
   const { slug = '' } = useParams();
   const now = useClock();
+  const online = useOnline();
 
   const [code, setCode] = useState('');
   const [screen, setScreen] = useState<Screen>({ kind: 'entry' });
@@ -143,6 +145,22 @@ const PunchPage = () => {
         </div>
       </header>
 
+      {/* Installed, the page loads from cache with no connection — so the
+          absence of one has to be said out loud rather than discovered when a
+          punch fails. The keypad is disabled because nothing can be recorded. */}
+      {!online && (
+        <div
+          role="status"
+          className="mt-5 flex items-center gap-3 rounded-xl border border-warning/40 bg-warning/10 px-4 py-3.5"
+        >
+          <WifiOff className="size-5 flex-shrink-0 text-warning" aria-hidden="true" />
+          <p className="text-sm font-medium sm:text-base">
+            No connection — clocking in and out is paused. Tell your manager if this
+            does not clear.
+          </p>
+        </div>
+      )}
+
       <div className="flex flex-grow flex-col justify-center py-8">
         {screen.kind === 'entry' && (
           <div>
@@ -172,7 +190,7 @@ const PunchPage = () => {
               }
               onBackspace={() => setCode((current) => current.slice(0, -1))}
               onClear={() => setCode('')}
-              disabled={busy}
+              disabled={busy || !online}
               shake={shake}
             />
           </div>

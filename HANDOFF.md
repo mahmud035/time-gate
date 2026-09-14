@@ -106,6 +106,31 @@ per shift and can be checked by hand.
 
 ---
 
+## Installing it on a phone or tablet
+
+TimeGate installs like an app, so it opens full-screen with no address bar.
+
+- **Android / Chrome:** open the punch link, then the menu → *Install app* (or
+  *Add to Home screen*). Chrome may also offer it by itself after a moment.
+- **iPhone / Safari:** open the punch link, tap the Share button, then
+  *Add to Home Screen*.
+
+It is the same app either way — installing only changes how it opens. Nothing is
+downloaded from an app store and there is nothing to update by hand: it picks up
+changes on its own.
+
+## If the wifi drops
+
+Once installed, the screen still opens without a connection — but it will say
+**"No connection — clocking in and out is paused"** and the keypad will not accept
+anything.
+
+That is deliberate. It would be easy to let people tap away and save it up for later,
+and that is exactly how the wrong times get recorded. Nothing is stored, so nothing is
+stored wrong. Use pen and paper (below) and enter it afterwards.
+
+---
+
 ## The tablet at the entrance
 
 - Open the punch link and add it to the home screen.

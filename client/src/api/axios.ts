@@ -73,12 +73,33 @@ api.interceptors.response.use(undefined, async (error: unknown) => {
 });
 
 /** Pulls the API's message out of an error so the UI never shows "Request failed". */
+/**
+ * True when the request never reached the server at all.
+ *
+ * Worth telling apart from a refusal: the server saying no and the server never
+ * hearing the question mean opposite things to whoever is standing there.
+ */
+export const isOfflineError = (error: unknown): boolean =>
+  axios.isAxiosError(error) &&
+  error.response === undefined &&
+  error.code !== 'ECONNABORTED';
+
 export const getApiErrorMessage = (
   error: unknown,
   fallback = 'Something went wrong',
 ): string => {
+  /**
+   * Axios reports a dead connection as "Network Error", which is not something
+   * to show a staff member at a door — and it matters more once the app is
+   * installed, because the page then loads from cache with no connection and
+   * the failure stops being self-evident.
+   */
+  if (isOfflineError(error)) {
+    return 'No connection. Nothing was recorded — try again once you are back online.';
+  }
+
   if (axios.isAxiosError<ApiErrorResponse>(error)) {
-    return error.response?.data?.message ?? error.message ?? fallback;
+    return error.response?.data?.message ?? fallback;
   }
 
   return fallback;

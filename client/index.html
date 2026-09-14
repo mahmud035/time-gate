@@ -3,7 +3,24 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <meta name="theme-color" content="#0f172a" />
+    <!-- Matches the manifest, so the installed window's chrome is the brand
+         colour rather than a leftover from an earlier palette. -->
+    <meta name="theme-color" content="#006bbb" />
+    <meta name="description" content="Clock in and out at work." />
+
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+
+    <!--
+      iOS ignores the web app manifest for Add to Home Screen and reads these
+      instead. Without them an installed TimeGate opens in a Safari tab with an
+      address bar, which is not what someone at a door wants to look at.
+    -->
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="TimeGate" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+
     <title>TimeGate</title>
   </head>
   <body>
