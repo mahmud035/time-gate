@@ -149,7 +149,7 @@ const RecordsPage = () => {
               <div>
                 <p className="text-sm font-semibold">
                   {timesheet.data.needsReview} shift
-                  {timesheet.data.needsReview === 1 ? '' : 's'} need a look before you
+                  {timesheet.data.needsReview === 1 ? ' needs' : 's need'} a look before you
                   export
                 </p>
                 <p className="mt-1 text-sm text-content-muted">
@@ -189,7 +189,8 @@ const RecordsPage = () => {
                 {rows.length}
               </div>
               <div className="mt-1 text-xs text-content-muted">
-                {timesheet.data.needsReview} need review
+                {timesheet.data.needsReview} need{timesheet.data.needsReview === 1 ? 's' : ''}{' '}
+                review
               </div>
             </div>
           </div>
