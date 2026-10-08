@@ -4,7 +4,7 @@ Rebuilds both illustrated PDFs in `docs/` from the running app:
 
 | File | For | Covers |
 |---|---|---|
-| `TimeGate-Guide.pdf` | the manager | the whole product, including corrections and the payroll export |
+| `TimeGate-Manager-Guide.pdf` | the manager | the whole product, including corrections and the payroll export |
 | `TimeGate-Staff-Guide.pdf` | everyone else | only what one person does: code, clock in, break, clock out, and what to do when something goes wrong |
 
 The staff one deliberately says nothing about exports, corrections or hosting.

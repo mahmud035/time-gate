@@ -99,7 +99,7 @@ const main = async () => {
     };
 
     const guides = [
-      { name: 'TimeGate-Guide.pdf', label: 'manager', html: buildManagerGuide(assets), footer: 'TimeGate — a guide for managers' },
+      { name: 'TimeGate-Manager-Guide.pdf', label: 'manager', html: buildManagerGuide(assets), footer: 'TimeGate — a guide for managers' },
       { name: 'TimeGate-Staff-Guide.pdf', label: 'staff', html: buildStaffGuide(assets), footer: 'TimeGate — clocking in and out' },
     ];
 
