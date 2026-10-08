@@ -50,7 +50,19 @@ export const seedDemo = async ({ serverRoot }) => {
   await mongoose.connect(config.MONGODB_URI, { dbName: config.MONGODB_DB });
 
   const at = (iso) => DateTime.fromISO(iso, { zone: config.TIMEZONE }).toJSDate();
-  const today = DateTime.now().setZone(config.TIMEZONE).toISODate();
+  const now = DateTime.now().setZone(config.TIMEZONE);
+
+  /**
+   * Dates are relative to the run, never pinned. A fixed week drifts out of the
+   * "previous week" the Records capture steps back to, and a fixed time today is
+   * in the future for any run before it — which leaves the demo person reading
+   * as clocked out and breaks the staff sequence.
+   */
+  const thisWeekStart =
+    config.PAY_WEEK_START === 'sunday'
+      ? now.startOf('day').minus({ days: now.weekday % 7 })
+      : now.startOf('week');
+  const lastWeek = (offset) => thisWeekStart.minus({ weeks: 1 }).plus({ days: offset }).toISODate();
 
   for (const person of [...DEMO_STAFF.map((s) => s.name), MANAGER.name]) {
     const existing = await User.findOne({ name: person });
@@ -92,26 +104,32 @@ export const seedDemo = async ({ serverRoot }) => {
 
   // A week that reads clearly in a screenshot: two clean shifts, one leaver,
   // and one forgotten clock-out to illustrate the review flow.
-  await punch('Alice Reed', 'clock-in', '2026-09-07T09:00');
-  await punch('Alice Reed', 'break-start', '2026-09-07T12:00');
-  await punch('Alice Reed', 'break-end', '2026-09-07T12:30');
-  await punch('Alice Reed', 'clock-out', '2026-09-07T17:00');
-  await punch('Alice Reed', 'clock-in', '2026-09-08T09:00');
-  await punch('Alice Reed', 'clock-out', '2026-09-08T17:00');
+  await punch('Alice Reed', 'clock-in', `${lastWeek(0)}T09:00`);
+  await punch('Alice Reed', 'break-start', `${lastWeek(0)}T12:00`);
+  await punch('Alice Reed', 'break-end', `${lastWeek(0)}T12:30`);
+  await punch('Alice Reed', 'clock-out', `${lastWeek(0)}T17:00`);
+  await punch('Alice Reed', 'clock-in', `${lastWeek(1)}T09:00`);
+  await punch('Alice Reed', 'clock-out', `${lastWeek(1)}T17:00`);
 
-  await punch('Ben Shaw', 'clock-in', '2026-09-09T09:00');
-  await punch('Ben Shaw', 'break-start', '2026-09-09T12:00');
-  await punch('Ben Shaw', 'break-end', '2026-09-09T12:30');
+  await punch('Ben Shaw', 'clock-in', `${lastWeek(2)}T09:00`);
+  await punch('Ben Shaw', 'break-start', `${lastWeek(2)}T12:00`);
+  await punch('Ben Shaw', 'break-end', `${lastWeek(2)}T12:30`);
 
-  await punch('Cara Diaz', 'clock-in', '2026-09-07T10:00');
-  await punch('Cara Diaz', 'clock-out', '2026-09-07T16:00');
+  await punch('Cara Diaz', 'clock-in', `${lastWeek(0)}T10:00`);
+  await punch('Cara Diaz', 'clock-out', `${lastWeek(0)}T16:00`);
 
   // A finished shift earlier today, so "your week so far" shows a real figure
   // on the confirmation screen rather than zero.
-  await punch('Alice Reed', 'clock-in', `${today}T08:30`);
-  await punch('Alice Reed', 'clock-out', `${today}T12:45`);
+  const shiftEnd = now.minus({ minutes: 30 });
+  await punch('Alice Reed', 'clock-in', shiftEnd.minus({ hours: 4, minutes: 15 }).toISO());
+  await punch('Alice Reed', 'clock-out', shiftEnd.toISO());
 
   await mongoose.disconnect();
 
-  return { database: config.MONGODB_DB, slug: config.PUNCH_SLUG };
+  return {
+    database: config.MONGODB_DB,
+    slug: config.PUNCH_SLUG,
+    // Ben's forgotten clock-out, which the correction screenshot fills in.
+    correctionDay: lastWeek(2),
+  };
 };

@@ -41,7 +41,14 @@ export const launchChrome = async ({ port = 9222 } = {}) => {
       '--disable-extensions',
       'about:blank',
     ],
-    { stdio: 'ignore', detached: false },
+    {
+      stdio: 'ignore',
+      detached: false,
+      // The app is en-GB, and on Linux Chrome takes its locale from the
+      // environment rather than --lang. Without this a native date field
+      // renders as 09/30/2026, 05:00 PM.
+      env: { ...process.env, LANGUAGE: 'en_GB', LANG: 'en_GB.UTF-8' },
+    },
   );
 
   for (let attempt = 0; attempt < 60; attempt += 1) {

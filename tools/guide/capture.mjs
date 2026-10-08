@@ -130,7 +130,7 @@ export const createCapturer = ({ page, baseUrl, outDir }) => {
  * between staff states rather than waiting out the confirmation's auto-return,
  * which keeps the sequence deterministic.
  */
-export const captureAll = async (capture, { slug, code, email, password }) => {
+export const captureAll = async (capture, { slug, code, email, password, correctionDay }) => {
   const punchPage = `/p/${slug}`;
 
   /**
@@ -171,7 +171,7 @@ export const captureAll = async (capture, { slug, code, email, password }) => {
    * height, and the clip would otherwise slice through the bottom row of keys.
    */
   await capture.goto(punchPage);
-  await capture.viewport(820, 820);
+  await capture.viewport(820, 860);
   await capture.setOffline(true);
   await wait(1500);
   await capture.shoot('s07-offline');
@@ -204,7 +204,7 @@ export const captureAll = async (capture, { slug, code, email, password }) => {
 
   await capture.click('Fix');
   await wait(900);
-  await capture.fill('correction-at', '2026-09-09T17:00');
+  await capture.fill('correction-at', `${correctionDay}T17:00`);
   await wait(300);
   await capture.shoot('m04-correction');
   await capture.clickLabelled('Close');

@@ -1,4 +1,4 @@
-import { mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { copyFileSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { connect, wait } from './cdp.mjs';
 import { launchChrome } from './chrome.mjs';
@@ -20,6 +20,7 @@ import { DEMO_CODE, MANAGER, seedDemo } from './seed-demo.mjs';
 const ROOT = resolve(import.meta.dirname, '../..');
 const APP = process.env.GUIDE_APP_URL ?? 'http://127.0.0.1:5000';
 const OUT_DIR = process.env.GUIDE_OUT_DIR ?? join(ROOT, 'docs');
+const SCREENSHOTS_DIR = process.env.GUIDE_SCREENSHOTS_DIR;
 const WORK = join(ROOT, 'node_modules/.cache/timegate-guide');
 const FONT = join(ROOT, 'client/dist/assets');
 
@@ -57,7 +58,7 @@ const main = async () => {
   mkdirSync(WORK, { recursive: true });
 
   console.log('\nSeeding demo data (invented people — never real staff)');
-  const { database, slug } = await seedDemo({ serverRoot: join(ROOT, 'server') });
+  const { database, slug, correctionDay } = await seedDemo({ serverRoot: join(ROOT, 'server') });
   console.log(`  database: ${database}`);
 
   console.log('\nLaunching headless Chrome');
@@ -76,7 +77,19 @@ const main = async () => {
       code: DEMO_CODE,
       email: MANAGER.email,
       password: MANAGER.password,
+      correctionDay,
     });
+
+    // Opt-in, so a plain `npm run guide` still keeps only the PDFs.
+    if (SCREENSHOTS_DIR) {
+      mkdirSync(SCREENSHOTS_DIR, { recursive: true });
+
+      for (const name of readdirSync(WORK).filter((file) => file.endsWith('.png'))) {
+        copyFileSync(join(WORK, name), join(SCREENSHOTS_DIR, name));
+      }
+
+      console.log(`\nKept the screenshots in ${SCREENSHOTS_DIR}`);
+    }
 
     const asBase64 = (path) => readFileSync(path).toString('base64');
     const assets = {
