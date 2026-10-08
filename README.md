@@ -398,10 +398,9 @@ cp server/.env.example server/.env.development   # then fill in the values
 
 ### Create the first accounts
 
-There is no public sign-up. Seed a manager, and optionally a staff member from the command line (the dashboard can add staff too). Run these from `server/` — the root-level wrappers do not forward flags:
+There is no public sign-up. Seed a manager, and optionally a staff member from the command line (the dashboard can add staff too):
 
 ```bash
-cd server
 npm run seed:manager -- --name "Jane Doe" --email jane@example.com --password "a-long-password"
 npm run seed:staff   -- --name "Priya Nair" --payroll-ref TG-002   # prints the code once
 ```
@@ -444,18 +443,18 @@ Validated with Zod at startup — the server exits with a clear message if anyth
 
 Run from the repository root.
 
-| Script                 | What it does                                                                                            |
-| ---------------------- | ------------------------------------------------------------------------------------------------------- |
-| `npm run dev:server`   | Server with hot reload (`tsx watch`)                                                                    |
-| `npm run dev:client`   | Vite dev server                                                                                         |
-| `npm run build`        | Clean-installs and builds client, then server                                                           |
-| `npm start`            | Production server from `server/dist`, serving `client/dist`                                             |
-| `npm test`             | Server test suites (Vitest)                                                                             |
-| `npm run typecheck`    | `tsc --noEmit` in both packages                                                                         |
-| `npm run lint`         | ESLint in both packages                                                                                 |
-| `npm run seed:manager` | Create a manager account — run inside `server/` to pass flags ([see above](#create-the-first-accounts)) |
-| `npm run seed:staff`   | Create a staff member and print their code once — likewise from `server/`                               |
-| `npm run guide`        | Regenerate the PDF guides from the running app                                                          |
+| Script                 | What it does                                                |
+| ---------------------- | ----------------------------------------------------------- |
+| `npm run dev:server`   | Server with hot reload (`tsx watch`)                        |
+| `npm run dev:client`   | Vite dev server                                             |
+| `npm run build`        | Clean-installs and builds client, then server               |
+| `npm start`            | Production server from `server/dist`, serving `client/dist` |
+| `npm test`             | Server test suites (Vitest)                                 |
+| `npm run typecheck`    | `tsc --noEmit` in both packages                             |
+| `npm run lint`         | ESLint in both packages                                     |
+| `npm run seed:manager` | Create a manager account                                    |
+| `npm run seed:staff`   | Create a staff member and print their code once             |
+| `npm run guide`        | Regenerate the PDF guides from the running app              |
 
 ---
 
